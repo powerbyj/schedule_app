@@ -1,1 +1,787 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>AI 일정·자료 관리 웹앱 (시간 없음)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
 
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f3f4f6;
+      color: #111827;
+    }
+    header {
+      padding: 14px 16px;
+      background: #2563eb;
+      color: white;
+      font-weight: 600;
+      font-size: 18px;
+      text-align: center;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 12px;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 14px;
+      box-shadow: 0 2px 6px rgba(15,23,42,0.08);
+    }
+    .card h2 {
+      margin: 0 0 10px;
+      font-size: 18px;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+    input, textarea, button {
+      width: 100%;
+      padding: 9px 11px;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      font-size: 14px;
+      font-family: inherit;
+    }
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 2px rgba(37,99,235,0.15);
+    }
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+    .hint {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 2px;
+      margin-bottom: 8px;
+    }
+    .img-preview {
+      width: 100%;
+      max-height: 240px;
+      object-fit: contain;
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+      background: #f9fafb;
+      margin-top: 8px;
+      margin-bottom: 8px;
+    }
+
+    /* 정렬 탭 */
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: none;
+      font-size: 13px;
+      font-weight: 600;
+      background: #e5e7eb;
+      color: #374151;
+      cursor: pointer;
+    }
+    .tab-btn.active {
+      background: #2563eb;
+      color: white;
+    }
+
+    /* 검색 입력창 + 아이콘 (4번 스타일) */
+    .search-wrapper {
+      position: relative;
+      margin-bottom: 8px;
+    }
+    .search-input {
+      padding-left: 34px;  /* 아이콘 자리 확보 */
+      font-size: 14px;
+    }
+    .search-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 16px;
+      pointer-events: none;
+      color: #9ca3af;
+    }
+
+    /* 일정 카드 */
+    .events-container {
+      margin-top: 4px;
+    }
+    .events-date-heading {
+      font-size: 14px;
+      font-weight: 700;
+      margin-top: 12px;
+      margin-bottom: 6px;
+      color: #111827;
+    }
+    .event-card {
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      padding: 9px 10px;
+      margin-bottom: 8px;
+      background: #f9fafb;
+    }
+    .event-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+    .event-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #111827;
+    }
+    .event-badges {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .badge {
+      padding: 2px 7px;
+      border-radius: 999px;
+      font-size: 11px;
+      background: #dbeafe;
+      color: #1d4ed8;
+      font-weight: 600;
+    }
+    .event-sub {
+      font-size: 12px;
+      color: #4b5563;
+      margin-bottom: 2px;
+    }
+    .event-note-preview {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 2px;
+    }
+    .event-card button {
+      margin-top: 6px;
+      width: auto;
+      font-size: 12px;
+      padding: 5px 9px;
+      border-radius: 999px;
+    }
+
+    /* 모달 */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,23,42,0.55);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 50;
+    }
+    .modal-content {
+      background: white;
+      border-radius: 14px;
+      max-width: 520px;
+      width: 92%;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 14px;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .modal-title {
+      font-size: 16px;
+      font-weight: 700;
+    }
+    .modal-close {
+      background: transparent;
+      border: none;
+      font-size: 20px;
+      padding: 0 4px;
+      color: #6b7280;
+    }
+    .modal-img {
+      width: 100%;
+      max-height: 400px;
+      object-fit: contain;
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+      margin: 8px 0;
+      background: #f9fafb;
+    }
+    .modal-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #4b5563;
+      margin-top: 6px;
+    }
+    .modal-text {
+      font-size: 13px;
+      color: #111827;
+      white-space: pre-wrap;
+    }
+    .modal-footer {
+      margin-top: 10px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 6px;
+    }
+    .btn-danger {
+      background: #dc2626;
+    }
+    .btn-outline {
+      background: white;
+      color: #374151;
+      border: 1px solid #d1d5db;
+    }
+
+    .hidden { display: none; }
+
+    @media (max-width: 600px) {
+      header { font-size: 17px; }
+      .card h2 { font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  AI 일정·자료 관리 웹앱
+</header>
+
+<div class="container">
+  <!-- 1. 일정 입력 -->
+  <div class="card">
+    <h2>1. 일정 사진 + 정보 입력</h2>
+
+    <label for="imageInput">자료 이미지 선택 (카메라/갤러리)</label>
+    <input id="imageInput" type="file" accept="image/*" />
+    <div class="hint">사진은 자동으로 용량을 줄여서 저장합니다. (가능하면 문서만 나오게 찍어주세요.)</div>
+    <img id="previewImage" class="img-preview" alt="미리보기" style="display:none;" />
+
+    <label for="titleInput">일정 제목</label>
+    <input id="titleInput" type="text" placeholder="예: 2026년도 본부 업무계획 공유회 계획(안)" />
+
+    <label for="planDateInput">계획일자 (자료에 적힌 일자)</label>
+    <input id="planDateInput" type="date" />
+
+    <label for="noteInput">메모 (선택)</label>
+    <textarea id="noteInput" placeholder="예: 본부장 참석, 청렴라실, 준비물 등"></textarea>
+
+    <div class="hint">업로드 일자는 저장 시점에 자동 기록됩니다.</div>
+
+    <button id="saveBtn" type="button">일정 저장</button>
+  </div>
+
+  <!-- 2. 일정 목록 -->
+  <div class="card">
+    <h2>2. 내 일정 목록</h2>
+
+    <div class="tabs">
+      <button id="tabUpload" class="tab-btn active" type="button">업로드 순 (최신 먼저)</button>
+      <button id="tabPlan" class="tab-btn" type="button">계획일자 순</button>
+    </div>
+
+    <!-- 검색창 (4번 스타일) -->
+    <div class="search-wrapper">
+      <span class="search-icon">🔍</span>
+      <input
+        id="searchInput"
+        class="search-input"
+        type="text"
+        placeholder="제목·메모·날짜 검색 (예: 업무계획, 12월 27일)"
+      />
+    </div>
+
+    <div id="eventsContainer" class="events-container">
+      아직 저장된 일정이 없습니다.
+    </div>
+  </div>
+</div>
+
+<!-- 상세보기 모달 -->
+<div id="detailModal" class="modal-backdrop hidden">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div id="detailTitle" class="modal-title">제목</div>
+      <button id="modalCloseBtn" class="modal-close" type="button">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="modal-label">계획일자</div>
+      <div id="detailPlanDate" class="modal-text"></div>
+
+      <div class="modal-label">업로드 일자</div>
+      <div id="detailUploadDate" class="modal-text"></div>
+
+      <div id="detailImageWrapper" style="margin-top:6px; display:none;">
+        <div class="modal-label">이미지</div>
+        <img id="detailImage" class="modal-img" alt="이미지" />
+      </div>
+
+      <div class="modal-label">메모</div>
+      <div id="detailNote" class="modal-text"></div>
+    </div>
+
+    <div class="modal-footer">
+      <button id="deleteBtn" class="btn-danger" type="button">일정 삭제</button>
+      <button id="modalCloseBtn2" class="btn-outline" type="button">닫기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ----- 전역 상태 -----
+  const STORAGE_KEY = "smartScheduleEvents_v3_noTime";
+  let events = [];
+  let currentSortMode = "upload"; // 'upload' | 'plan'
+  let currentSearchText = "";
+  let currentDetailId = null;
+  let currentImageDataUrl = null;
+
+  // ----- 유틸 함수 -----
+  function loadEvents() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      return parsed;
+    } catch (e) {
+      console.error("loadEvents error", e);
+      return [];
+    }
+  }
+
+  function saveEventsToStorage(evts) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(evts));
+      return true;
+    } catch (e) {
+      console.error("saveEvents error", e);
+      alert("저장 중 오류가 발생했습니다. (용량 문제일 수 있습니다.)\n불필요한 일정을 삭제하고 다시 시도해 주세요.");
+      return false;
+    }
+  }
+
+  function pad2(n) {
+    return n < 10 ? "0" + n : "" + n;
+  }
+
+  function formatKoreanDateFromISO(iso) {
+    if (!iso) return "미지정";
+    const [y, m, d] = iso.split("-").map(Number);
+    if (!y || !m || !d) return iso;
+    const dt = new Date(y, m - 1, d);
+    const yoils = ["일", "월", "화", "수", "목", "금", "토"];
+    return y + "년 " + m + "월 " + d + "일 (" + yoils[dt.getDay()] + ")";
+  }
+
+  function getTodayISO() {
+    const now = new Date();
+    return now.getFullYear() + "-" + pad2(now.getMonth() + 1) + "-" + pad2(now.getDate());
+  }
+
+  function formatUploadDisplay(iso) {
+    if (!iso) return "";
+    const [y, m, d] = iso.split("-").map(Number);
+    return y + "년 " + m + "월 " + d + "일";
+  }
+
+  // 이미지 압축 (너무 크게 저장하지 않도록)
+  function compressImage(file, callback) {
+    if (!file) {
+      callback(null);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const img = new Image();
+      img.onload = function () {
+        const maxSize = 900; // 최대 가로/세로
+        let w = img.width;
+        let h = img.height;
+
+        if (w > h && w > maxSize) {
+          h = Math.round(h * (maxSize / w));
+          w = maxSize;
+        } else if (h >= w && h > maxSize) {
+          w = Math.round(w * (maxSize / h));
+          h = maxSize;
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, w, h);
+
+        // JPEG 품질 0.7로 압축
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+        callback(dataUrl);
+      };
+      img.onerror = function () {
+        console.error("image load error");
+        callback(null);
+      };
+      img.src = e.target.result;
+    };
+    reader.onerror = function () {
+      console.error("file read error");
+      callback(null);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // 검색 필터
+  function filterEvents(evts, searchText) {
+    const q = (searchText || "").trim();
+    if (!q) return evts;
+    const lower = q.toLowerCase();
+    return evts.filter(ev => {
+      const titleMatch =
+        ev.title && ev.title.toLowerCase().includes(lower);
+      const noteMatch =
+        ev.note && ev.note.toLowerCase().includes(lower);
+      const planKorean = formatKoreanDateFromISO(ev.planDate || "");
+      const planMatch =
+        (ev.planDate && ev.planDate.includes(q)) ||
+        planKorean.includes(q);
+      const uploadDisplay = formatUploadDisplay(ev.uploadDate || "");
+      const uploadMatch = uploadDisplay.includes(q);
+      return titleMatch || noteMatch || planMatch || uploadMatch;
+    });
+  }
+
+  // 정렬 적용
+  function sortEvents(evts, mode) {
+    const copy = evts.slice();
+    if (mode === "plan") {
+      copy.sort((a, b) => {
+        if (!a.planDate && !b.planDate) return 0;
+        if (!a.planDate) return 1; // 계획일자 없는 건 뒤로
+        if (!b.planDate) return -1;
+        if (a.planDate === b.planDate) {
+          return (b.uploadDate || "").localeCompare(a.uploadDate || "");
+        }
+        return a.planDate.localeCompare(b.planDate);
+      });
+    } else {
+      // upload
+      copy.sort((a, b) => {
+        return (b.uploadDate || "").localeCompare(a.uploadDate || "");
+      });
+    }
+    return copy;
+  }
+
+  // ----- 렌더링 -----
+  function renderEvents() {
+    const container = document.getElementById("eventsContainer");
+    if (!events.length) {
+      container.textContent = "아직 저장된 일정이 없습니다.";
+      return;
+    }
+
+    const filtered = filterEvents(events, currentSearchText);
+    const sorted = sortEvents(filtered, currentSortMode);
+
+    if (!sorted.length) {
+      container.textContent = "검색 결과가 없습니다.";
+      return;
+    }
+
+    container.innerHTML = "";
+
+    // 업로드일자 기준으로 묶어서 헤더 표시
+    let lastUploadDate = null;
+
+    sorted.forEach(ev => {
+      if (currentSortMode === "upload") {
+        if (ev.uploadDate !== lastUploadDate) {
+          lastUploadDate = ev.uploadDate;
+          const heading = document.createElement("div");
+          heading.className = "events-date-heading";
+          heading.textContent =
+            "업로드 일자: " + formatKoreanDateFromISO(ev.uploadDate || getTodayISO());
+          container.appendChild(heading);
+        }
+      } else if (currentSortMode === "plan") {
+        if (ev.planDate !== lastUploadDate) {
+          lastUploadDate = ev.planDate;
+          const heading = document.createElement("div");
+          heading.className = "events-date-heading";
+          heading.textContent =
+            "계획일자: " + formatKoreanDateFromISO(ev.planDate || "");
+          container.appendChild(heading);
+        }
+      }
+
+      const card = document.createElement("div");
+      card.className = "event-card";
+
+      const titleRow = document.createElement("div");
+      titleRow.className = "event-title-row";
+
+      const titleEl = document.createElement("div");
+      titleEl.className = "event-title";
+      titleEl.textContent = ev.title || "(제목 없음)";
+
+      const badges = document.createElement("div");
+      badges.className = "event-badges";
+      if (ev.imageDataUrl) {
+        const b1 = document.createElement("div");
+        b1.className = "badge";
+        b1.textContent = "이미지";
+        badges.appendChild(b1);
+      }
+      if (ev.note && ev.note.trim()) {
+        const b2 = document.createElement("div");
+        b2.className = "badge";
+        b2.textContent = "메모";
+        badges.appendChild(b2);
+      }
+
+      titleRow.appendChild(titleEl);
+      if (badges.childElementCount > 0) {
+        titleRow.appendChild(badges);
+      }
+      card.appendChild(titleRow);
+
+      const planLine = document.createElement("div");
+      planLine.className = "event-sub";
+      planLine.textContent =
+        "계획일자: " + formatKoreanDateFromISO(ev.planDate || "");
+      card.appendChild(planLine);
+
+      const uploadLine = document.createElement("div");
+      uploadLine.className = "event-sub";
+      uploadLine.textContent =
+        "업로드 일자: " + formatUploadDisplay(ev.uploadDate || "");
+      card.appendChild(uploadLine);
+
+      if (ev.note && ev.note.trim()) {
+        const notePrev = document.createElement("div");
+        notePrev.className = "event-note-preview";
+        const txt =
+          ev.note.length > 50
+            ? ev.note.slice(0, 50) + "..."
+            : ev.note;
+        notePrev.textContent = txt;
+        card.appendChild(notePrev);
+      }
+
+      const detailBtn = document.createElement("button");
+      detailBtn.type = "button";
+      detailBtn.textContent = "상세 보기";
+      detailBtn.addEventListener("click", () => openDetail(ev.id));
+      card.appendChild(detailBtn);
+
+      container.appendChild(card);
+    });
+  }
+
+  // ----- 상세 모달 -----
+  function openDetail(id) {
+    const ev = events.find(e => e.id === id);
+    if (!ev) return;
+    currentDetailId = id;
+
+    document.getElementById("detailTitle").textContent =
+      ev.title || "(제목 없음)";
+    document.getElementById("detailPlanDate").textContent =
+      formatKoreanDateFromISO(ev.planDate || "");
+    document.getElementById("detailUploadDate").textContent =
+      formatUploadDisplay(ev.uploadDate || "");
+    document.getElementById("detailNote").textContent =
+      ev.note && ev.note.trim() ? ev.note : "(메모 없음)";
+
+    const imgWrapper = document.getElementById("detailImageWrapper");
+    const imgEl = document.getElementById("detailImage");
+    if (ev.imageDataUrl) {
+      imgEl.src = ev.imageDataUrl;
+      imgWrapper.style.display = "block";
+    } else {
+      imgEl.src = "";
+      imgWrapper.style.display = "none";
+    }
+
+    document.getElementById("detailModal").classList.remove("hidden");
+  }
+
+  function closeDetail() {
+    document.getElementById("detailModal").classList.add("hidden");
+    currentDetailId = null;
+  }
+
+  function deleteCurrentEvent() {
+    if (currentDetailId == null) return;
+    if (!confirm("해당 일정을 삭제하시겠습니까?")) return;
+    events = events.filter(ev => ev.id !== currentDetailId);
+    if (!saveEventsToStorage(events)) return;
+    closeDetail();
+    renderEvents();
+  }
+
+  // ----- 폼 관련 -----
+  function clearForm() {
+    document.getElementById("imageInput").value = "";
+    document.getElementById("titleInput").value = "";
+    document.getElementById("planDateInput").value = "";
+    document.getElementById("noteInput").value = "";
+    currentImageDataUrl = null;
+    const preview = document.getElementById("previewImage");
+    preview.src = "";
+    preview.style.display = "none";
+  }
+
+  function handleImageChange(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) {
+      currentImageDataUrl = null;
+      const preview = document.getElementById("previewImage");
+      preview.src = "";
+      preview.style.display = "none";
+      return;
+    }
+
+    // 일단 미리보기는 원본으로 띄우고, 저장할 때 압축본 사용
+    const reader = new FileReader();
+    reader.onload = function (ev) {
+      const preview = document.getElementById("previewImage");
+      preview.src = ev.target.result;
+      preview.style.display = "block";
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function handleSaveClick() {
+    const title = document.getElementById("titleInput").value.trim();
+    const planDate = document.getElementById("planDateInput").value;
+    const note = document.getElementById("noteInput").value.trim();
+    const fileInput = document.getElementById("imageInput");
+    const file = fileInput.files && fileInput.files[0];
+
+    if (!title) {
+      alert("일정 제목을 입력해주세요.");
+      return;
+    }
+
+    const uploadDate = getTodayISO();
+    const saveBtn = document.getElementById("saveBtn");
+    saveBtn.disabled = true;
+    saveBtn.textContent = "저장 중...";
+
+    compressImage(file, function (dataUrl) {
+      const newEvent = {
+        id: Date.now(),
+        title,
+        planDate: planDate || null,
+        uploadDate: uploadDate,
+        note,
+        imageDataUrl: dataUrl
+      };
+
+      events.push(newEvent);
+      if (!saveEventsToStorage(events)) {
+        // 저장 실패 시 방금 추가한 것 되돌리기
+        events.pop();
+        saveBtn.disabled = false;
+        saveBtn.textContent = "일정 저장";
+        return;
+      }
+
+      clearForm();
+      renderEvents();
+      saveBtn.disabled = false;
+      saveBtn.textContent = "일정 저장";
+      alert("일정이 저장되었습니다.");
+    });
+  }
+
+  // ----- 초기화 -----
+  document.addEventListener("DOMContentLoaded", function () {
+    events = loadEvents();
+    renderEvents();
+
+    document
+      .getElementById("imageInput")
+      .addEventListener("change", handleImageChange);
+
+    document
+      .getElementById("saveBtn")
+      .addEventListener("click", handleSaveClick);
+
+    // 정렬 탭
+    const tabUpload = document.getElementById("tabUpload");
+    const tabPlan = document.getElementById("tabPlan");
+
+    tabUpload.addEventListener("click", function () {
+      currentSortMode = "upload";
+      tabUpload.classList.add("active");
+      tabPlan.classList.remove("active");
+      renderEvents();
+    });
+
+    tabPlan.addEventListener("click", function () {
+      currentSortMode = "plan";
+      tabPlan.classList.add("active");
+      tabUpload.classList.remove("active");
+      renderEvents();
+    });
+
+    // 검색 입력 (타이핑할 때마다 즉시 검색)
+    const searchInput = document.getElementById("searchInput");
+    searchInput.addEventListener("input", function (e) {
+      currentSearchText = e.target.value || "";
+      renderEvents();
+    });
+
+    // 모달 닫기/삭제
+    document
+      .getElementById("modalCloseBtn")
+      .addEventListener("click", closeDetail);
+    document
+      .getElementById("modalCloseBtn2")
+      .addEventListener("click", closeDetail);
+    document
+      .getElementById("deleteBtn")
+      .addEventListener("click", deleteCurrentEvent);
+
+    // 배경 클릭 시 모달 닫기
+    document
+      .getElementById("detailModal")
+      .addEventListener("click", function (e) {
+        if (e.target === e.currentTarget) {
+          closeDetail();
+        }
+      });
+  });
+</script>
+</body>
+</html>
